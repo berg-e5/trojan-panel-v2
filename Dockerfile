@@ -1,31 +1,43 @@
-FROM alpine:3.15
-LABEL maintainer="jonsosnyan <https://jonssonyan.com>"
-WORKDIR /tpdata/trojan-panel/
-ENV mariadb_ip=127.0.0.1 \
-    mariadb_port=9507 \
-    mariadb_user=root \
-    mariadb_pas=123456 \
-    redis_host=127.0.0.1 \
-    redis_port=6378 \
-    redis_pass=123456 \
-    server_port=8081 \
-    TZ=Asia/Shanghai \
-    GIN_MODE=release
-ARG TARGETOS
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /app
+
+# 安装编译依赖
+RUN apk add --no-cache bash git ca-certificates
+
+# 安装 garble
+RUN go install mvdan.cc/garble@latest
+
+# 复制源码
+COPY . .
+
+# 编译（支持多架构）
 ARG TARGETARCH
 ARG TARGETVARIANT
-COPY build/trojan-panel-${TARGETOS}-${TARGETARCH}${TARGETVARIANT} trojan-panel
-# Set apk China mirror
-# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
-RUN apk add bash tzdata ca-certificates && \
-    rm -rf /var/cache/apk/*
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH}${TARGETVARIANT} \
+    garble -literals -tiny build \
+    -o trojan-panel \
+    -ldflags "-s -w"
+
+# 运行镜像
+FROM alpine:3.15
+
+WORKDIR /tpdata/trojan-panel/
+
+ENV TZ=Asia/Shanghai \
+    GIN_MODE=release
+
+RUN apk add --no-cache bash tzdata ca-certificates
+
+COPY --from=builder /app/trojan-panel .
+
 ENTRYPOINT chmod 777 ./trojan-panel && \
     ./trojan-panel \
-    -host=${mariadb_ip} \
-    -port=${mariadb_port} \
-    -user=${mariadb_user} \
-    -password=${mariadb_pas} \
-    -redisHost=${redis_host} \
-    -redisPort=${redis_port} \
-    -redisPassword=${redis_pass} \
-    -serverPort=${server_port}
+    -host=${mariadb_ip:-127.0.0.1} \
+    -port=${mariadb_port:-9507} \
+    -user=${mariadb_user:-root} \
+    -password=${mariadb_pas:-123456} \
+    -redisHost=${redis_host:-127.0.0.1} \
+    -redisPort=${redis_port:-6378} \
+    -redisPassword=${redis_pass:-123456} \
+    -serverPort=${server_port:-8081}
