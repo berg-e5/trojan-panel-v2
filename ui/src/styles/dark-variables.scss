@@ -1,0 +1,54 @@
+// Dark theme color variables
+// Sidebar
+$menuText: #e6e6e6;
+$menuActiveText: #409eff;
+$subMenuActiveText: #f4f4f5;
+
+$menuBg: #1a1a2e;
+$menuHover: #252542;
+
+$subMenuBg: #16162a;
+$subMenuHover: #252542;
+
+$sideBarWidth: 210px;
+
+// Background
+$bg-base: #16213e;
+$bg-card: #1a1a2e;
+$bg-container: #0f0f23;
+
+// Text
+$text-primary: #e6e6e6;
+$text-secondary: #a0a0a0;
+$text-placeholder: #666;
+
+// Border
+$border-color: #2d2d44;
+$border-color-light: #252542;
+
+// Element UI overrides for dark
+$--color-primary: #409eff;
+$--color-success: #13ce66;
+$--color-warning: #ffba00;
+$--color-danger: #ff4949;
+$--bg-color: #1a1a2e;
+$--bg-overlay-color: #0f0f23;
+$--text-color-primary: #e6e6e6;
+$--text-color-regular: #a0a0a0;
+$--text-color-secondary: #666;
+$--border-color-base: #2d2d44;
+
+:export {
+  menuText: $menuText;
+  menuActiveText: $menuActiveText;
+  subMenuActiveText: $subMenuActiveText;
+  menuBg: $menuBg;
+  menuHover: $menuHover;
+  subMenuBg: $subMenuBg;
+  subMenuHover: $subMenuHover;
+  sideBarWidth: $sideBarWidth;
+  bgBase: $bg-base;
+  bgCard: $bg-card;
+  textPrimary: $text-primary;
+  textSecondary: $text-secondary;
+}

@@ -40,5 +40,7 @@ func initAccountRouter(trojanApi *gin.RouterGroup) {
 		account.POST("/createAccountBatch", api.CreateAccountBatch)
 		// 导出未使用的账户
 		account.POST("/exportAccountUnused", api.ExportAccountUnused)
+		// 批量账号操作
+		account.POST("/batchAccount", api.BatchAccount)
 	}
 }

@@ -18,5 +18,6 @@ func initApiRouter(router *gin.Engine) {
 		initBlackListRouter(trojanApi)
 		initEmailRecordRouter(trojanApi)
 		initFileTaskRouter(trojanApi)
+		initStatisticsRouter(trojanApi)
 	}
 }
