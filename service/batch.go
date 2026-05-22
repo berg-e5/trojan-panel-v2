@@ -180,9 +180,10 @@ func batchExtendAccount(account *model.Account, days int) error {
 
 // batchResetTraffic 重置流量
 func batchResetTraffic(account *model.Account) error {
-	zero := 0
-	account.Download = &zero
-	account.Upload = &zero
+	// 使用 DAO 方法将 download/upload 重置为 0 并写入数据库
+	if err := dao.ResetAccountDownloadAndUpload(account.Id, nil); err != nil {
+		return err
+	}
 
 	var email string
 	if account.Email != nil {

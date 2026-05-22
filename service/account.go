@@ -3,9 +3,13 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	redisgo "github.com/gomodule/redigo/redis"
+	"github.com/sirupsen/logrus"
+
 	"trojan-panel/core"
 	"trojan-panel/dao"
 	"trojan-panel/dao/redis"
@@ -336,28 +340,34 @@ func ResetAccountDownloadAndUpload(id *uint, roleIds *[]uint) error {
 	return dao.ResetAccountDownloadAndUpload(id, roleIds)
 }
 
-func LoginLimit(username string) {
-	redis.Client.String.
-		Incr(fmt.Sprintf("trojan-panel:login-limit:%s", username))
+func LoginLimit(username string) error {
+	key := fmt.Sprintf("trojan-panel:login-limit:%s", username)
+	incr, err := redis.Client.String.Incr(key).Result()
+	if err != nil {
+		return err
+	}
+	// 首次失败（count==1），设 5 分钟过期
+	if incr == 1 {
+		redis.Client.String.Set(key, 1, 5*time.Minute)
+		return nil
+	}
+	// 累计 5 次失败，延长至 15 分钟锁定
+	if incr >= 5 {
+		redis.Client.String.Set(key, incr, 15*time.Minute)
+	}
+	return nil
 }
 
-// LoginVerify 密码输入错误3次以上 将账户锁定30分钟
+// LoginVerify 密码输入错误5次以上 将账户锁定15分钟
 func LoginVerify(username string) error {
-	get := redis.Client.String.
-		Get(fmt.Sprintf("trojan-panel:login-limit:%s", username))
-	reply, err := get.Result()
-	if err != nil {
+	key := fmt.Sprintf("trojan-panel:login-limit:%s", username)
+	reply, err := redis.Client.String.Get(key).Result()
+	if err != nil && err != redisgo.ErrNil {
 		return errors.New(constant.SysError)
 	}
-	if reply != nil {
-		result, err := get.Int()
-		if err != nil {
-			return errors.New(constant.SysError)
-		}
-		if result >= 3 {
-			redis.Client.String.Set(fmt.Sprintf("trojan-panel:login-limit:%s", username), -1, time.Minute.Milliseconds()*30/1000)
-		}
-		if result >= 3 || result == -1 {
+	if reply != "" {
+		count, _ := strconv.Atoi(reply)
+		if count >= 5 {
 			return errors.New(constant.LoginLimitError)
 		}
 	}
