@@ -5,8 +5,11 @@ WORKDIR /app
 # 安装编译依赖
 RUN apk add --no-cache bash git ca-certificates
 
-# 安装 garble
-RUN go install mvdan.cc/garble@latest
+# 设置 Go proxy（避免网络问题）
+ENV GOPROXY=https://proxy.golang.org,direct
+
+# 安装 garble（固定版本）
+RUN go install mvdan.cc/garble/cmd/garble@v0.15.0
 
 # 复制源码
 COPY . .
