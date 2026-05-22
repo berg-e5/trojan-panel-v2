@@ -15,6 +15,8 @@ func initAuthRouter(router *gin.Engine) {
 			trojanAuth.POST("/login", api.Login)
 			// 创建账户
 			trojanAuth.POST("/register", api.Register)
+			// 刷新 Access Token
+			trojanAuth.POST("/refresh", api.RefreshToken)
 			// 系统默认设置
 			trojanAuth.GET("/setting", api.Setting)
 			// 订阅

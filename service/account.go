@@ -342,18 +342,21 @@ func ResetAccountDownloadAndUpload(id *uint, roleIds *[]uint) error {
 
 func LoginLimit(username string) error {
 	key := fmt.Sprintf("trojan-panel:login-limit:%s", username)
-	incr, err := redis.Client.String.Incr(key).Result()
+	incrResult, err := redis.Client.String.Incr(key).Result()
 	if err != nil {
 		return err
 	}
+	incr, _ := redisgo.Int64(incrResult, nil)
+	fiveMinMs := int64(5 * 60 * 1000)
+	fifteenMinMs := int64(15 * 60 * 1000)
 	// 首次失败（count==1），设 5 分钟过期
 	if incr == 1 {
-		redis.Client.String.Set(key, 1, 5*time.Minute)
+		redis.Client.String.Set(key, incr, fiveMinMs)
 		return nil
 	}
 	// 累计 5 次失败，延长至 15 分钟锁定
 	if incr >= 5 {
-		redis.Client.String.Set(key, incr, 15*time.Minute)
+		redis.Client.String.Set(key, incr, fifteenMinMs)
 	}
 	return nil
 }
@@ -361,14 +364,17 @@ func LoginLimit(username string) error {
 // LoginVerify 密码输入错误5次以上 将账户锁定15分钟
 func LoginVerify(username string) error {
 	key := fmt.Sprintf("trojan-panel:login-limit:%s", username)
-	reply, err := redis.Client.String.Get(key).Result()
+	replyResult, err := redis.Client.String.Get(key).Result()
 	if err != nil && err != redisgo.ErrNil {
 		return errors.New(constant.SysError)
 	}
-	if reply != "" {
-		count, _ := strconv.Atoi(reply)
-		if count >= 5 {
-			return errors.New(constant.LoginLimitError)
+	if replyResult != nil {
+		reply, _ := redisgo.String(replyResult, nil)
+		if reply != "" {
+			count, _ := strconv.Atoi(reply)
+			if count >= 5 {
+				return errors.New(constant.LoginLimitError)
+			}
 		}
 	}
 	return nil

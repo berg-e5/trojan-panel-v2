@@ -27,7 +27,8 @@ type AccountPageVo struct {
 }
 
 type AccountLoginVo struct {
-	Token string `json:"token"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refreshToken,omitempty"`
 }
 
 type AccountInfo struct {

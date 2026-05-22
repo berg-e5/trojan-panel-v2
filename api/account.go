@@ -72,6 +72,13 @@ func Login(c *gin.Context) {
 					time.Hour.Milliseconds()*12/1000).Result(); err != nil {
 				vo.Fail(constant.SysError, c)
 			} else {
+				// 生成并存储 Refresh Token
+				refreshToken, err := service.GenerateRefreshTokenOnly(*accountLoginDto.Username)
+				if err != nil {
+					vo.Fail(constant.SysError, c)
+					return
+				}
+
 				milli := uint(time.Now().UnixMilli())
 				// 记录最后登录时间
 				accountUpdate := model.Account{
@@ -91,7 +98,8 @@ func Login(c *gin.Context) {
 					return
 				}
 				accountLoginVo := vo.AccountLoginVo{
-					Token: tokenStr,
+					Token:        tokenStr,
+					RefreshToken: refreshToken,
 				}
 				vo.Success(accountLoginVo, c)
 			}
@@ -145,6 +153,11 @@ func Register(c *gin.Context) {
 func Logout(c *gin.Context) {
 	account := service.GetCurrentAccount(c)
 	if err := redis.Client.Key.RetryDel(fmt.Sprintf("trojan-panel:token:%s", account.Username)); err != nil {
+		vo.Fail(constant.LogOutError, c)
+		return
+	}
+	// 同时清除 Refresh Token
+	if err := service.DeleteRefreshToken(account.Username); err != nil {
 		vo.Fail(constant.LogOutError, c)
 		return
 	}
