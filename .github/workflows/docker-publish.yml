@@ -50,6 +50,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ghcr.io/${{ github.repository_owner }}/trojan-panel:latest
+            ghcr.io/${{ github.repository_owner.toLowerCase() }}/trojan-panel:latest
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
